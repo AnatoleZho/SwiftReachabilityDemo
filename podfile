@@ -1,0 +1,7 @@
+platform :ios, '9.0'
+
+target 'SwiftReachabilityDemo' do
+   pod 'SwiftReachability'
+end 
+
+use_frameworks!

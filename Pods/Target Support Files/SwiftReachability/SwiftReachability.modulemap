@@ -1,0 +1,6 @@
+framework module SwiftReachability {
+  umbrella header "SwiftReachability-umbrella.h"
+
+  export *
+  module * { export * }
+}

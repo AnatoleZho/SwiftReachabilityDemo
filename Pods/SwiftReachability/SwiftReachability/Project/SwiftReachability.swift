@@ -9,46 +9,51 @@
 import Foundation
 import SystemConfiguration
 
-/// Reachability Changed Notification
-public let FFReachabilityChangedNotification = "FFNetworkReachabilityChangedNotification"
+//MARK: Reachability Changed Notification
+public let NetworkReachabilityChangedNotification = "kNetworkReachabilityChangedNotification"
 
-/// Net Reachability Protocol
+//MARK: Net Reachability Protocol
 public protocol SwiftReachabilityProtocol {
-    /// check the reachability of a given host name
+    
+    /// Use to check the reachability of a given host name.
+    ///
+    /// - Parameter hostName: host name, domain name
+    /// - Returns: return network status
     static func reachabilityWithHostName(hostName: String) -> NetworkStatus
-    /// start listening for reachability notifications
+    
+    /// Start listening for reachability notifications on the current run loop.
+    ///
+    /// - Returns: return result
     func startNotifier() -> Bool
+    
     /// stop listening for reachability notifications
     func stopNotifier()
+    
     /// current reachability status
     var currentReachabilityStatus: NetworkStatus { get }
 }
 
-/// Network Status
-public enum NetworkStatus {
-    case NotReachable, ReachableViaWiFi, ReachableViaWWAN
+//MARK: Network Status
+public enum NetworkStatus: String {
+    case notReachable = "无网络", reachableViaWiFi = "WIFI", reachableViaWWAN = "UMTS(2G/3G/4G)"
     
     public var description: String {
-        switch self {
-        case .ReachableViaWWAN:
-            return "2G/3G/4G"
-        case .ReachableViaWiFi:
-            return "WiFi"
-        case .NotReachable:
-            return "No Connection"
-        }
+            return self.rawValue
     }
 }
 
-private func & (lhs: SCNetworkReachabilityFlags, rhs: SCNetworkReachabilityFlags) -> UInt32 { return lhs.rawValue & rhs.rawValue }
+//MARK: Supporting functions
+private func &(lhs: SCNetworkReachabilityFlags, rhs: SCNetworkReachabilityFlags) -> UInt32 {
+    return lhs.rawValue & rhs.rawValue
+}
 
-/// Net Reachability
+//MARK: Net Reachability
 public class SwiftReachability: SwiftReachabilityProtocol {
     
     
     public static func reachabilityWithHostName(hostName: String) -> NetworkStatus {
         let reach = SwiftReachability(hostname: hostName)
-        
+
         return reach.currentReachabilityStatus
     }
     
@@ -65,13 +70,13 @@ public class SwiftReachability: SwiftReachabilityProtocol {
         }
     }
     
-    /// start listening for reachability notifications
+    // start listening for reachability notifications
     public func startNotifier() -> Bool {
         var returnValue = false
         
         var context = SCNetworkReachabilityContext(version: 0, info: nil, retain: nil, release: nil, copyDescription: nil)
         let setReturn = SCNetworkReachabilitySetCallback(reachability!, { (_, _, _) in
-            NotificationCenter.default.post(name: NSNotification.Name.init(FFReachabilityChangedNotification), object: nil)
+            NotificationCenter.default.post(name: NSNotification.Name.init(NetworkReachabilityChangedNotification), object: nil)
         }, &context)
         if setReturn {
             let scheduleReturn = SCNetworkReachabilityScheduleWithRunLoop(reachability!, CFRunLoopGetMain(), CFRunLoopMode.defaultMode.rawValue )
@@ -82,18 +87,18 @@ public class SwiftReachability: SwiftReachabilityProtocol {
         return returnValue
     }
     
-    /// stop listening for reachability notifications
+    // stop listening for reachability notifications
     public func stopNotifier() {
         if reachability != nil {
             SCNetworkReachabilityUnscheduleFromRunLoop(reachability!, CFRunLoopGetMain(), CFRunLoopMode.defaultMode.rawValue)
         }
     }
     
-    /// current reachability status
+    // current reachability status
     public var currentReachabilityStatus: NetworkStatus {
         
         if reachability == nil {
-            return NetworkStatus.NotReachable
+            return NetworkStatus.notReachable
         }
         
         var flags = SCNetworkReachabilityFlags(rawValue: 0)
@@ -105,14 +110,14 @@ public class SwiftReachability: SwiftReachabilityProtocol {
     func networkStatus(flags: SCNetworkReachabilityFlags) -> NetworkStatus {
         if (flags & SCNetworkReachabilityFlags.reachable == 0) {
             // // The target host is not reachable.
-            return NetworkStatus.NotReachable;
+            return NetworkStatus.notReachable
         }
         
-        var returnValue = NetworkStatus.NotReachable;
+        var returnValue = NetworkStatus.notReachable
         if flags & SCNetworkReachabilityFlags.connectionRequired == 0 {
             // If the target host is reachable and no connection is required
             // then we'll assume (for now) that you're on Wi-Fi...
-            returnValue = NetworkStatus.ReachableViaWiFi
+            returnValue = NetworkStatus.reachableViaWiFi
         }
         
         if flags & SCNetworkReachabilityFlags.connectionOnDemand != 0 || flags & SCNetworkReachabilityFlags.connectionOnTraffic != 0 {
@@ -122,16 +127,16 @@ public class SwiftReachability: SwiftReachabilityProtocol {
             if flags & SCNetworkReachabilityFlags.interventionRequired == 0 {
                 
                 // ... and no [user] intervention is needed...
-                returnValue = NetworkStatus.ReachableViaWiFi
+                returnValue = NetworkStatus.reachableViaWiFi
             }
         }
         
         if (flags & SCNetworkReachabilityFlags.isWWAN) == SCNetworkReachabilityFlags.isWWAN.rawValue {
             // ... but WWAN connections are OK if the calling application is using the CFNetwork APIs.
-            returnValue = NetworkStatus.ReachableViaWWAN
+            returnValue = NetworkStatus.reachableViaWWAN
         }
         
-        return returnValue;
+        return returnValue
     }
 }
 

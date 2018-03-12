@@ -16,7 +16,7 @@ class ViewController: UIViewController {
     private lazy var reachability: SwiftReachability = SwiftReachability(hostname: "www.apple.com")
     
     deinit {
-        NotificationCenter.default.removeObserver(self, name: NSNotification.Name.init(FFReachabilityChangedNotification), object: nil)
+        NotificationCenter.default.removeObserver(self, name: NSNotification.Name.init(NetworkReachabilityChangedNotification), object: nil)
     }
     
     
@@ -24,8 +24,11 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        NotificationCenter.default.addObserver(self, selector: #selector(networkReachabilityChanged), name: NSNotification.Name.init(FFReachabilityChangedNotification), object: nil)
-        reachability.startNotifier()
+        NotificationCenter.default.addObserver(self, selector: #selector(networkReachabilityChanged), name: NSNotification.Name.init(NetworkReachabilityChangedNotification), object: nil)
+       let startResult = reachability.startNotifier()
+        if !startResult {
+            print("启用网络连接监控失败。。。")
+        }
     }
     
     @IBAction func checkInternetAction(_ sender: Any) {
